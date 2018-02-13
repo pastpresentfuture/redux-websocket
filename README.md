@@ -1,5 +1,9 @@
 # redux-websocket
 
+## Disclamer
+
+This is a fork of http://github.com/giantmachines/redux-websocket repository I plan to remove this repository as soon as the original user upload the npm version
+
 ## Summary
 
 A Redux middleware for managing data over a WebSocket connection.
