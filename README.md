@@ -1,6 +1,5 @@
 # redux-websocket [![codecov](https://codecov.io/gh/giantmachines/redux-websocket/branch/master/graph/badge.svg)](https://codecov.io/gh/giantmachines/redux-websocket) [![npm version](https://badge.fury.io/js/%40giantmachines%2Fredux-websocket.svg)](https://badge.fury.io/js/%40giantmachines%2Fredux-websocket)
 
-<<<<<<< HEAD
 ## Disclamer
 
 This is a fork of http://github.com/giantmachines/redux-websocket repository I plan to remove this repository as soon as the original user upload the npm version
@@ -8,7 +7,6 @@ This is a fork of http://github.com/giantmachines/redux-websocket repository I p
 ## Summary
 =======
 `redux-websocket` is a Redux middleware for managing data over a WebSocket connection.
->>>>>>> 91753e8228b1d4febb15bb727d44732ee0a57604
 
 This middleware uses actions to interact with a WebSocket connection including connecting, disconnecting, sending messages, and receiving messages. All actions follow the [Flux Standard Action](https://github.com/acdlite/flux-standard-action) model.
 
