@@ -1,276 +1,164 @@
-# redux-websocket [![codecov](https://codecov.io/gh/giantmachines/redux-websocket/branch/master/graph/badge.svg)](https://codecov.io/gh/giantmachines/redux-websocket) [![npm version](https://badge.fury.io/js/%40giantmachines%2Fredux-websocket.svg)](https://badge.fury.io/js/%40giantmachines%2Fredux-websocket)
+# redux-websocket
 
 ## Disclamer
 
 This is a fork of http://github.com/giantmachines/redux-websocket repository I plan to remove this repository as soon as the original user upload the npm version
 
 ## Summary
-=======
-`redux-websocket` is a Redux middleware for managing data over a WebSocket connection.
 
-This middleware uses actions to interact with a WebSocket connection including connecting, disconnecting, sending messages, and receiving messages. All actions follow the [Flux Standard Action](https://github.com/acdlite/flux-standard-action) model.
+A Redux middleware for managing data over a WebSocket connection.
 
-### Features
+This middleware uses actions, dispatched with Redux to interact with a WebSocket server including connect, disconnect, message sending, and message receiving. All actions follow the [Flux Standard Action](https://github.com/acdlite/flux-standard-action) model. 
 
-- Written in TypeScript.
-- Interact with a WebSocket connection by dispatching actions.
-- Connect to multiple WebSocket streams by creating multiple middleware instances.
-- Handle WebSocket events with Redux middleware, integrate with Saga, and use reducers to persist state.
-- Automatically handle reconnection.
+## Is it any good?
+
+Yes. Yes it is.
 
 ## Installation
 
-```sh
-$ npm i @giantmachines/redux-websocket
+```bash
+$ npm install @giantmachines/redux-websocket --save
 ```
 
-## Configuration
+## Middleware Installation
 
-Configure your Redux store to use the middleware with `applyMiddleware`. This package exports a function to create an instance of a middleware, which allows for configuration options, detailed below. Furthermore, you can create multiple instances of this middleware in order to connect to multiple WebSocket streams.
+Once you have installed the library via npm, you can add it to your Redux middleware stack just like you would any other middleware.
 
-```js
-import { applyMiddleware, compose, createStore } from 'redux';
-import reduxWebsocket from '@giantmachines/redux-websocket';
+```javascript
+// ... other imports
+import websocket from '@giantmachines/redux-websocket'
 
-import reducer from './store/reducer';
-
-// Create the middleware instance.
-const reduxWebsocketMiddleware = reduxWebsocket();
-
-// Create the Redux store.
+const app = combineReducers(reducers)
 const store = createStore(
-  reducer,
-  applyMiddleware(websocketMiddleware)
-);
+  app,
+  applyMiddleware(
+    websocket,
+    ...
+  )
+)
 ```
 
-You may also pass options to the `reduxWebsocket` function.
+## Available Action Types
 
-#### Available options
+The following types are available.
 
-```js
-interface Options {
-  // Defaults to 'REDUX_WEBSOCKET'. Use this option to set a custom action type
-  // prefix. This is useful when you're creating multiple instances of the
-  // middleware, and need to handle actions dispatched by each middleware instance separately.
-  prefix?: string,
-  // Defaults to 2000. Amount of time to wait between reconnection attempts.
-  reconnectInterval?: number,
-  // Callback when the WebSocket connection is open. Useful for when you
-  // need a reference to the WebSocket instance.
-  onOpen?: (socket: WebSocket) => void,
+```javascript
+// Action types to be dispatched by the user
+WEBSOCKET_CONNECT
+WEBSOCKET_DISCONNECT
+WEBSOCKET_SEND
 
-}
+// Action types dispatched by the WebSocket implementation.
+// These would be caught by reducers or other middleware.
+WEBSOCKET_CONNECTING
+WEBSOCKET_OPEN
+WEBSOCKET_CLOSED
+WEBSOCKET_MESSAGE
 ```
 
-## Usage
+They can be imported from the standard package and used like so
 
-`redux-websocket` will dispatch some actions automatically, based on what the internal WebSocket connection. Some actions will need to be dispatched by you.
+```javascript
+import { WEBSOCKET_CONNECT } from '@giantmachines/redux-websocket'
 
-### User dispatched actions
-
-These actions must be dispatched by you, however we do export action creator functions that can be used.
-
-> ⚠️ If you have created your middleware with a `prefix` option, make sure you pass that prefix as the second argument to all of these action creators.
-
----
-
-##### ➡️ `REDUX_WEBSOCKET::WEBSOCKET_CONNECT`
-
-###### Example:
-
-```js
-import { connect } from '@giantmachines/redux-websocket';
-
-store.dispatch(connect('wss://my-server.com'));
+store.dispatch({
+  type: WEBSOCKET_CONNECT,
+  payload: {
+    url: 'wss://localhost:8080'
+  }
+})
 ```
 
-###### Arguments:
+## Actions: User Dispatched
 
-1. `url` *(`string`)*: WebSocket URL to connect to.
-2. \[`prefix`\] *(`string`)*: Optional action type prefix.
+The following actions are to be dispatched by the user. They will be handled by the middleware. All examples are essentially Flow types to show expectations. The constants can (and should) be imported from the library module (see above)
 
----
+### WEBSOCKET_CONNECT
 
-##### ➡️ `REDUX_WEBSOCKET::WEBSOCKET_DISCONNECT`
+Open a connection to a WebSocket server.
 
-###### Example:
-
-```js
-import { disconnect } from '@giantmachines/redux-websocket';
-
-store.dispatch(disconnect());
-```
-
-###### Arguments:
-
-1. \[`prefix`\] *(`string`)*: Optional action type prefix.
-
----
-
-##### ➡️ `REDUX_WEBSOCKET::WEBSOCKET_SEND`
-
-###### Example:
-
-```js
-import { send } from '@giantmachines/redux-websocket';
-
-store.dispatch(send({ my: 'message' }));
-```
-
-###### Arguments:
-
-1. `message` *(`any`)*: Any JSON serializable value. This will be stringified and sent over the connection. If the value passed is not serializable, `JSON.stringify` will throw an error.
-2. \[`prefix`\] *(`string`)*: Optional action type prefix.
-
----
-
-### Library dispatched actions
-
-These actions are dispatched automatically by the middlware.
-
-##### ⬅️ `REDUX_WEBSOCKET::OPEN`
-
-Dispatched when the WebSocket connection successfully opens, including after automatic reconnect.
-
-###### Structure
-
-```js
+```javascript
 {
-    type: 'REDUX_WEBSOCKET::OPEN',
-    meta: {
-        timestamp: string,
-    },
+  type: WEBSOCKET_CONNECT,
+  payload: {
+    url: string // something like 'wss://'
+  }
 }
 ```
 
----
+### WEBSOCKET_DISCONNECT
 
-##### ⬅️ `REDUX_WEBSOCKET::CLOSED`
+Disconnect from a WebSocket server (and cleanup).
 
-Dispatched when the WebSocket connection successfully closes, both when you ask the middleware to close the connection, and when the connection drops.
-
-###### Structure
-
-```js
+```javascript
 {
-    type: 'REDUX_WEBSOCKET::CLOSED',
-    meta: {
-        timestamp: string,
-    },
+  type: WEBSOCKET_DISCONNECT,
 }
 ```
 
----
+### WEBSOCKET_SEND
 
-##### ⬅️ `REDUX_WEBSOCKET::MESSAGE`
+Send a message over an open WebSocket connection. The payload can be an arbitrary JavaScript object or type. The library `JSON.stringify()` the payload before sending it.
 
-Dispatched when the WebSocket connection receives a message. The payload includes a `message` key, which is JSON, and an `origin` key, which is the address of the connection from which the message was recieved.
-
-###### Structure
-
-```js
+```javascript
 {
-    type: 'REDUX_WEBSOCKET::MESSAGE',
-    meta: {
-        timestamp: string,
-    },
-    payload: {
-        message: string,
-        origin: string,
-    },
+  type: WEBSOCKET_SEND,
+  payload: Object|number|string
 }
 ```
 
----
+## Actions: User Handled
 
-##### ⬅️ `REDUX_WEBSOCKET::BROKEN`
+User handled actions correspond to the callbacks on a WebSocket object. These actions are to be handled in app-space at the reducers or in another piece of middleware to handle message parsing and routing.
 
-Dispatched when the WebSocket connection is dropped. This action will always be dispatched _after_ the `CLOSED` action.
+### WEBSOCKET_MESSAGE
 
-###### Structure
+Dispatched from redux-websocket when the WebSocket `onmessage` callback is executed. This action represents discrete messages sent from the server to the client. Its inverse is `WEBSOCKET_SEND`. The data is a `string` and it is the client's responsibility to deserialize as necessary. That is, this lib makes no assumptions about the format of the data.
 
-```js
+```javascript
 {
-    type: 'REDUX_WEBSOCKET::BROKEN',
-    meta: {
-        timestamp: string,
-    },
+  type: WEBSOCKET_CLOSED,
+  payload: {
+    timestamp: Date,
+    event: Event,
+    data: string
+  }
 }
 ```
 
----
+### WEBSOCKET_OPEN
 
-##### ⬅️ `REDUX_WEBSOCKET::BEGIN_RECONNECT`
+Dispatched from redux-websocket when the WebSocket `onopen` callback is executed. This typically signals a successful connection.
 
-Dispatched when the middleware is starting the reconnection process.
-
-###### Structure
-
-```js
+```javascript
 {
-    type: 'REDUX_WEBSOCKET::BEGIN_RECONNECT',
-    meta: {
-        timestamp: string,
-    },
+  type: WEBSOCKET_OPEN,
+  payload: {
+    timestamp: Date,
+    event: Event
+  }
 }
 ```
 
----
+### WEBSOCKET_CLOSED
 
-##### ⬅️ `REDUX_WEBSOCKET::RECONNECT_ATTEMPT`
+Dispatched from redux-websocket when the WebSocket `onclosed` callback is executed. This typically signals a disconnecton event. Codes can be found in the `event`.
 
-Dispatched every time the middleware attempts a reconnection. Includes a `count` as part of the payload.
-
-###### Structure
-
-```js
+```javascript
 {
-    type: 'REDUX_WEBSOCKET::RECONNECT_ATTEMPT',
-    meta: {
-        timestamp: string,
-    },
-    payload: {
-        count: number,
-    },
+  type: WEBSOCKET_CLOSED,
+  payload: {
+    timestamp: Date,
+    event: Event
+  }
 }
 ```
 
----
+## Contributing
 
-##### ⬅️ `REDUX_WEBSOCKET::RECONNECTED`
+If you like this library and would like to make modifications or additions, please fork the repo and issue a pull request. Here are a couple things that we know are needed.
 
-Dispatched when the middleware reconnects. This action is dispached right before an `OPEN` action.
+- [ ] Better test coverage
+- [ ] More refined Flow types
+- [ ] More complete usage examples
 
-###### Structure
-
-```js
-{
-    type: 'REDUX_WEBSOCKET::RECONNECTED',
-    meta: {
-        timestamp: string,
-    },
-}
-```
-
----
-
-##### ⬅️ `REDUX_WEBSOCKET::ERROR`
-
-General purpose error action.
-
-###### Structure
-
-```js
-{
-    type: 'REDUX_WEBSOCKET::ERROR',
-    error: true,
-    meta: {
-        timestamp: string,
-        message: string,
-        name: string,
-        originalAction: Action | null,
-    },
-    payload: Error,
-}
-```
