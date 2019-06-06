@@ -8,5 +8,3 @@ lib
 # Apple
 .DS_Store
 yarn.lock
-.eslintcache
-.awcache
